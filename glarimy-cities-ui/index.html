@@ -1,0 +1,104 @@
+<html>
+    <head>
+        <title>Glarimy Cities</title>
+        <style>
+            li {
+                cursor: pointer
+            }
+        </style>
+        <script>
+            var cities = undefined;
+            addEventListener('load', function(){
+                let xhr = new XMLHttpRequest();
+                let url = "https://dvma0uc47c.execute-api.us-east-1.amazonaws.com/dev/cities/";
+                xhr.open('get', url, true);
+                xhr.onreadystatechange = function(){
+                    if(xhr.status == 200 && xhr.readyState == 4){
+                        let json = JSON.parse(xhr.responseText);
+                        cities = json.Items;
+                        for(let i=0; i<cities.length; i++){
+                            let city = cities[i];
+                            if(city.category == "Default")
+                                continue;
+                            let cityli = document.createElement('li');
+                            cityli.innerHTML = city.name;
+                            cityli.id = city.name;
+                            cityli.addEventListener('click', function(e){
+                                e.preventDefault();
+                                e.stopPropagation();
+                                let catol = document.createElement('ol');
+                                for(let j=0; j<cities.length; j++){
+                                    if(cities[j].name == e.target.id && cities[j].category != 'Default'){
+                                        let catli = document.createElement('li');
+                                        catli.innerHTML = cities[j].category;
+                                        catli.id = cities[j].category;
+                                        catli.setAttribute('city', e.target.id)
+                                        catli.addEventListener('click', function(e){
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            console.log(e.target.id);
+                                            let secol = document.createElement('ol');
+                                            for(let k=0; k<cities.length; k++){
+                                                if(cities[k].name == e.target.getAttribute('city') && cities[k].category == e.target.id){
+                                                    let sections = cities[k].sections;
+                                                    for(let l=0; l<sections.length; l++){
+                                                        let secli = document.createElement('li');
+                                                        secli.innerHTML = sections[l];
+                                                        secli.setAttribute('city', cities[k].name);
+                                                        secli.setAttribute('category', cities[k].category);
+                                                        secli.setAttribute('section', sections[l]);
+                                                        secli.addEventListener('click', function(e){
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            let licity = e.target.getAttribute('city');
+                                                            let licat = e.target.getAttribute('category')
+                                                            let lisec = e.target.getAttribute('section')
+                                                            let entriesurl = `https://dvma0uc47c.execute-api.us-east-1.amazonaws.com/dev/cities/entries?city=${licity}&category=${licat}&section=${lisec}`;
+                                                            let xhr = new XMLHttpRequest();
+                                                            xhr.open('get', entriesurl, true);
+                                                            xhr.onreadystatechange = function(){
+                                                                if(xhr.status == 200 && xhr.readyState == 4){
+                                                                    let json = JSON.parse(xhr.responseText);
+                                                                    let entries = json.Item.entries.L;
+                                                                    console.log(entries);
+                                                                    for(let l=0; l<entries.length; l++){
+                                                                        let entry = entries[l];
+                                                                        let tr = `<tr><td>${entry.M.name.S}</td><td>${entry.M.address.S}</td><td>${JSON.stringify(entry.M.data.M)}</td></tr>`;
+                                                                        document.getElementById('entries').innerHTML += tr;
+                                                                    }
+                                                                }
+                                                            };
+                                                            xhr.send();                                                            
+                                                        })
+                                                        secol.appendChild(secli);
+                                                    }
+                                                }
+                                            }
+                                            e.target.appendChild(secol);
+                                        })
+                                        catol.appendChild(catli);
+                                    }
+                                }
+                                e.target.appendChild(catol);
+                            })
+                            document.getElementById('cities').appendChild(cityli);
+                        }
+                    }
+                }
+                xhr.send();
+            })
+        </script>
+    </head>
+    <body>
+        <h1>Glarimy Cities</h1><hr/>
+        <h3>Cities</h3>
+        <ol id='cities'>
+        </ol>
+        <h3>Search Results</h3>
+        <table id='entries' border='1' style="width: 100%">
+            <tr>
+                <th>Name</th><th>Address</th><th>Data</th>
+            </tr>
+        </table>
+    </body>
+</html>
